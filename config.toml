@@ -1,0 +1,14 @@
+[ollama]
+url = "http://127.0.0.1:11434"
+# Pick the default after running the benchmark: python bench/run_bench.py --models ...
+model = "gemma4:26b-mlx"   # bench 2026-11-25: 31/32, 0.36 s avg (qwen3.5:9b-mlx: 30/32, 0.57 s)
+timeout_s = 60
+keep_alive = "3пше шщтш"     # keep the model in memory between corrections
+
+[hotkey]
+# Modifiers: ctrl, alt (option), shift, cmd. Key: a-z, 0-9, space.
+combo = "ctrl+alt+g"
+
+[correction]
+max_chars = 8000       # refuse bigger fields (e.g. Cmd+A grabbed a whole page)
+max_workers = 4        # parallel requests; Ollama queues them if OLLAMA_NUM_PARALLEL=1

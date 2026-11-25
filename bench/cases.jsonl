@@ -1,0 +1,32 @@
+{"input": "He dont know what to do about it.", "expected": ["He doesn't know what to do about it."]}
+{"input": "Their is a problem with the build.", "expected": ["There is a problem with the build."]}
+{"input": "Can you sent me the file?", "expected": ["Can you send me the file?"]}
+{"input": "I will be their in 5 minutes", "expected": ["I will be there in 5 minutes"]}
+{"input": "We was planning to release it on monday.", "expected": ["We were planning to release it on Monday."]}
+{"input": "Its a good idea, but we need more time.", "expected": ["It's a good idea, but we need more time."]}
+{"input": "I recieved your email and will reply tommorow.", "expected": ["I received your email and will reply tomorrow."]}
+{"input": "She go to the gym every day.", "expected": ["She goes to the gym every day."]}
+{"input": "The meeting have been moved to 3 PM.", "expected": ["The meeting has been moved to 3 PM."]}
+{"input": "I am agree with you.", "expected": ["I agree with you."]}
+{"input": "Who's laptop is this?", "expected": ["Whose laptop is this?"]}
+{"input": "thanks for you help yesterday", "expected": ["Thanks for your help yesterday", "thanks for your help yesterday"]}
+{"input": "Could you please review my PR, I think its ready.", "expected": ["Could you please review my PR? I think it's ready.", "Could you please review my PR, I think it's ready.", "Could you please review my PR; I think it's ready."]}
+{"input": "We should of tested this earlier.", "expected": ["We should have tested this earlier."]}
+{"input": "There are less bugs this sprint.", "expected": ["There are fewer bugs this sprint."]}
+{"input": "The servers was down for two hours last night.", "expected": ["The servers were down for two hours last night."]}
+{"input": "Thank you for you're quick response.", "expected": ["Thank you for your quick response."]}
+{"input": "If I would have known, I would have told you.", "expected": ["If I had known, I would have told you."]}
+{"input": "Everyone have to submit their timesheet until Friday.", "expected": ["Everyone has to submit their timesheet by Friday."]}
+{"input": "Sorry for the late reply, I was in a meetings all day.", "expected": ["Sorry for the late reply, I was in meetings all day.", "Sorry for the late reply; I was in meetings all day.", "Sorry for the late reply. I was in meetings all day.", "Sorry for the late reply, I was in a meeting all day.", "Sorry for the late reply; I was in a meeting all day.", "Sorry for the late reply. I was in a meeting all day."]}
+{"input": "The results was better then expected.", "expected": ["The results were better than expected."]}
+{"input": "Dear John,\nI hope this email finds you well. I wanted to follow up on our discusion from last week.\n\nBest regards,\nAnna", "expected": ["Dear John,\nI hope this email finds you well. I wanted to follow up on our discussion from last week.\n\nBest regards,\nAnna"]}
+{"input": "- update the docs\n- fix the login bug wich affects mobile users\n- deploy to staging", "expected": ["- update the docs\n- fix the login bug which affects mobile users\n- deploy to staging", "- Update the docs\n- Fix the login bug which affects mobile users\n- Deploy to staging"]}
+{"input": "I have attached the documents you asked for.", "expected": ["I have attached the documents you asked for."]}
+{"input": "Let's sync tomorrow at 10.", "expected": ["Let's sync tomorrow at 10."]}
+{"input": "LGTM, merging now", "expected": ["LGTM, merging now"]}
+{"input": "btw the build is green again", "expected": ["btw the build is green again", "Btw the build is green again", "BTW the build is green again", "Btw, the build is green again", "btw, the build is green again"]}
+{"input": "@maria can you check https://jira.example.com/browse/OPS-123 when you have a minute?", "expected": ["@maria can you check https://jira.example.com/browse/OPS-123 when you have a minute?"]}
+{"input": "The new endpoint returns 500 when `user_id` is missing.", "expected": ["The new endpoint returns 500 when `user_id` is missing."]}
+{"input": "I'll send the report by Friday.", "expected": ["I'll send the report by Friday."]}
+{"input": "Привіт, можеш глянути PR?", "expected": ["Привіт, можеш глянути PR?"]}
+{"input": "Me and John will handle the migration.", "expected": ["John and I will handle the migration.", "Me and John will handle the migration."]}
