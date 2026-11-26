@@ -70,11 +70,11 @@ class OllamaClient:
         """Load the model into memory (an empty chat request only loads it)."""
         self._request("POST", "/api/chat", {"model": self.model, "messages": [], "keep_alive": self.keep_alive})
 
-    def correct(self, text: str) -> str:
+    def correct(self, text: str, lang: str = "en") -> str:
         model = self.model  # read once: the menu may switch models concurrently
         payload = {
             "model": model,
-            "messages": build_messages(text),
+            "messages": build_messages(text, lang),
             "stream": False,
             "keep_alive": self.keep_alive,
             "options": {

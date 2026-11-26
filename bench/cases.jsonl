@@ -30,3 +30,30 @@
 {"input": "I'll send the report by Friday.", "expected": ["I'll send the report by Friday."]}
 {"input": "Привіт, можеш глянути PR?", "expected": ["Привіт, можеш глянути PR?"]}
 {"input": "Me and John will handle the migration.", "expected": ["John and I will handle the migration.", "Me and John will handle the migration."]}
+{"lang": "pl", "input": "Napewno wyśle ci ten plik jutro.", "expected": ["Na pewno wyślę ci ten plik jutro.", "Na pewno wyślę Ci ten plik jutro."]}
+{"lang": "pl", "input": "Wziełem laptopa do domu.", "expected": ["Wziąłem laptopa do domu."]}
+{"lang": "pl", "input": "Prosze o szybką odpowiedź.", "expected": ["Proszę o szybką odpowiedź."]}
+{"lang": "pl", "input": "Dziękuje za pomoc!", "expected": ["Dziękuję za pomoc!"]}
+{"lang": "pl", "input": "Włanczam serwer ponownie.", "expected": ["Włączam serwer ponownie."]}
+{"lang": "pl", "input": "Wyłanczam powiadomienia na weekend.", "expected": ["Wyłączam powiadomienia na weekend."]}
+{"lang": "pl", "input": "Spóźnie się kilka minut.", "expected": ["Spóźnię się kilka minut."]}
+{"lang": "pl", "input": "W każdym bądź razie wyślij mi ten plik.", "expected": ["W każdym razie wyślij mi ten plik."]}
+{"lang": "pl", "input": "Zrobiłem deploy na produkcje i wszystko działa.", "expected": ["Zrobiłem deploy na produkcję i wszystko działa."]}
+{"lang": "pl", "input": "Spotkanie zostało przełożone na Poniedziałek.", "expected": ["Spotkanie zostało przełożone na poniedziałek."]}
+{"lang": "pl", "input": "Nie wiem czy zdąże na spotkanie.", "expected": ["Nie wiem, czy zdążę na spotkanie."]}
+{"lang": "pl", "input": "Mam nadzieje że wszystko jest w porządku.", "expected": ["Mam nadzieję, że wszystko jest w porządku."]}
+{"lang": "pl", "input": "Ten raport który wysłałeś ma błędy.", "expected": ["Ten raport, który wysłałeś, ma błędy."]}
+{"lang": "pl", "input": "Musimy to zrobić żeby zdążyć przed terminem.", "expected": ["Musimy to zrobić, żeby zdążyć przed terminem."]}
+{"lang": "pl", "input": "Daj znać jak skończysz.", "expected": ["Daj znać, jak skończysz."]}
+{"lang": "pl", "input": "Ktoś wie gdzie jest dokumentacja do API?", "expected": ["Ktoś wie, gdzie jest dokumentacja do API?"]}
+{"lang": "pl", "input": "@marek możesz zerknąć na https://jira.example.com/browse/OPS-7 jak będziesz miał chwilę?", "expected": ["@marek możesz zerknąć na https://jira.example.com/browse/OPS-7, jak będziesz miał chwilę?", "@marek, możesz zerknąć na https://jira.example.com/browse/OPS-7, jak będziesz miał chwilę?"]}
+{"lang": "pl", "input": "Dzień dobry,\nchciałbym zapytać czy raport jest już gotowy.\n\nPozdrawiam,\nAnna", "expected": ["Dzień dobry,\nchciałbym zapytać, czy raport jest już gotowy.\n\nPozdrawiam,\nAnna"]}
+{"lang": "pl", "input": "- zaktualizować dokumentacje\n- naprawić błąd logowania\n- wdrożyć na staging", "expected": ["- zaktualizować dokumentację\n- naprawić błąd logowania\n- wdrożyć na staging"]}
+{"lang": "pl", "input": "Dzisiaj jest bardzo ciepło na dworze.", "expected": ["Dzisiaj jest bardzo ciepło na dworze."]}
+{"lang": "pl", "input": "Wysłałem ci wczoraj maila z raportem.", "expected": ["Wysłałem ci wczoraj maila z raportem."]}
+{"lang": "pl", "input": "Spoko, ogarnę to po obiedzie", "expected": ["Spoko, ogarnę to po obiedzie"]}
+{"lang": "pl", "input": "Endpoint zwraca błąd 500, gdy brakuje `user_id`.", "expected": ["Endpoint zwraca błąd 500, gdy brakuje `user_id`."]}
+{"lang": "pl", "input": "Dzień dobry, w załączniku przesyłam fakturę za październik.", "expected": ["Dzień dobry, w załączniku przesyłam fakturę za październik."]}
+{"lang": "pl", "no_diacritics": true, "input": "dzien dobry, jak sie masz?", "expected": ["dzien dobry, jak sie masz?", "Dzien dobry, jak sie masz?", "dzień dobry, jak się masz?", "Dzień dobry, jak się masz?"]}
+{"lang": "pl", "no_diacritics": true, "input": "czesc, mozesz mi wyslac ten plik?", "expected": ["czesc, mozesz mi wyslac ten plik?", "Czesc, mozesz mi wyslac ten plik?", "cześć, możesz mi wysłać ten plik?", "Cześć, możesz mi wysłać ten plik?"]}
+{"lang": "pl", "no_diacritics": true, "input": "nie wiem czy zdaze dzisiaj", "expected": ["nie wiem, czy zdaze dzisiaj", "Nie wiem, czy zdaze dzisiaj", "nie wiem, czy zdążę dzisiaj", "Nie wiem, czy zdążę dzisiaj"]}
