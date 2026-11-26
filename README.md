@@ -11,7 +11,7 @@ after:   I went to the office yesterday and forgot my laptop
 - **Works everywhere** — any app that exposes its text field to macOS Accessibility, with a clipboard fallback for the rest.
 - **Local and private** — talks only to [Ollama](https://ollama.com) on `localhost`.
 - **Fixes, doesn't rewrite** — every model answer is validated; anything that looks like a rewrite is discarded.
-- **Fast** — ~0.4 s per message with `gemma4:26b-mlx` on Apple Silicon.
+- **Fast and light** — ~0.3 s per message with `gemma4:12b-mlx` (7.7 GB) on Apple Silicon.
 - **Undoable** — the fix is pasted like normal input, so `⌘Z` in the app restores your text.
 
 > Status: working MVP (v0.1). macOS only.
@@ -48,7 +48,7 @@ after:   I went to the office yesterday and forgot my laptop
 git clone https://github.com/SartSR/proofkey.git && cd proofkey
 python3.12 -m venv .venv
 .venv/bin/pip install -e ".[dev]"
-ollama pull gemma4:26b-mlx      # or any model, see "Choosing a model"
+ollama pull gemma4:12b-mlx      # or any model, see "Choosing a model"
 ```
 
 ## Run
@@ -89,7 +89,7 @@ To also log the text (before → after), set `GRAMMAR_FIX_DEBUG=1`.
 ```toml
 [ollama]
 url = "http://127.0.0.1:11434"
-model = "gemma4:26b-mlx"
+model = "gemma4:12b-mlx"
 timeout_s = 60
 keep_alive = "30m"     # keep the model in memory between corrections
 
@@ -115,16 +115,23 @@ You can switch the model for the current session from the menu bar.
 - **latency** — time per case.
 
 ```bash
-.venv/bin/python bench/run_bench.py --models gemma4:26b-mlx,qwen3.5:9b-mlx -v
+.venv/bin/python bench/run_bench.py --models gemma4:12b-mlx,qwen3.5:9b-mlx -v
 ```
 
 Results on an Apple Silicon Mac (32 cases):
 
-| Model | Accuracy | Clean kept | Avg | p95 |
-|---|---|---|---|---|
-| **gemma4:26b-mlx** | **32/32** | 8/9 | **0.37 s** | 0.68 s |
-| qwen3.5:9b-mlx | 30/32 | 8/9 | 0.57 s | 1.0 s |
-| GRMR-V3-G4B Q8_0 (grammar fine-tune) | 29/32 | 7/9 | 0.54 s | 0.99 s |
+| Model | Size | Accuracy | Clean kept | Avg | p95 |
+|---|---|---|---|---|---|
+| **gemma4:12b-mlx** (default) | **7.7 GB** | **32/32** | 8/9 | **0.33 s** | **0.49 s** |
+| gemma4:26b-mlx (MoE) | 18 GB | 32/32 | 8/9 | 0.34 s | 0.64 s |
+| qwen3.5:9b-mlx | 8.9 GB | 31/32 | 8/9 | 0.56 s | 0.99 s |
+| GRMR-V3-G4B Q8_0 (grammar fine-tune) | ~4 GB | 29/32 | 7/9 | 0.54 s | 0.99 s |
+| inkling-2-mini:26b-a5b-nvfp4 | 20 GB | 15/32 | 9/9 | 3.21 s | 3.88 s |
+
+Notes:
+
+- **MoE saves compute, not memory.** All experts stay in RAM, so `26b-a4b` needs as much memory as any 26B model.
+- **Prefer models whose reasoning can be switched off.** `inkling-2-mini` keeps reasoning hidden even with `think: false` / `"none"` (~70 tokens for a one-line fix), which costs seconds and exhausts the token budget.
 
 Add your own real-world misses to `bench/cases.jsonl`. Over time the benchmark becomes a test of *your* writing.
 
