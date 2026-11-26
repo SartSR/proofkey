@@ -13,7 +13,7 @@ DEFAULT_PATH = Path(__file__).resolve().parent.parent / "config.toml"
 @dataclass
 class Config:
     ollama_url: str = "http://127.0.0.1:11434"
-    model: str = "gemma4:26b-mlx"
+    model: str = "gemma4:12b-mlx"
     timeout_s: float = 60.0
     keep_alive: str = "30m"
     hotkey: str = "ctrl+alt+g"
