@@ -1,7 +1,7 @@
 [ollama]
 url = "http://127.0.0.1:11434"
 # Pick the default after running the benchmark: python bench/run_bench.py --models ...
-model = "gemma4:26b-mlx"   # bench 2026-11-25: 31/32, 0.36 s avg (qwen3.5:9b-mlx: 30/32, 0.57 s)
+model = "gemma4:12b-mlx"   # bench 2026-11-25: 32/32, 0.33 s avg, 7.7 GB (gemma4:26b-mlx: 32/32, 0.34 s, 18 GB)
 timeout_s = 60
 keep_alive = "30m"     # keep the model in memory between corrections
 
