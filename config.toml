@@ -12,3 +12,4 @@ combo = "ctrl+alt+g"
 [correction]
 max_chars = 8000       # refuse bigger fields (e.g. Cmd+A grabbed a whole page)
 max_workers = 4        # parallel requests; Ollama queues them if OLLAMA_NUM_PARALLEL=1
+languages = ["en", "pl"]  # detected per line; text in other languages (e.g. Ukrainian) is left untouched

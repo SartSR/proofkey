@@ -18,10 +18,11 @@ import rumps
 from AppKit import NSApplication, NSApplicationActivationPolicyAccessory, NSBeep
 from PyObjCTools import AppHelper
 
-from . import text_access
+from . import lang, text_access
 from .config import Config, Hotkey, load_config, parse_hotkey
 from .core import correct_text
 from .ollama_client import OllamaClient, OllamaError
+from .prompts import LANGUAGES
 from .text_access import TextAccessError
 
 log = logging.getLogger("grammar_fix")
@@ -95,6 +96,11 @@ class GlobalHotKey:
 class GrammarFixApp(rumps.App):
     def __init__(self, cfg: Config):
         super().__init__("Grammar Fix", title=ICON_IDLE, quit_button=None)
+        unsupported = [x for x in cfg.languages if x not in LANGUAGES]
+        if unsupported:
+            raise ValueError(
+                f"No prompt for language(s) {unsupported} in config.toml; supported: {', '.join(LANGUAGES)}"
+            )
         self.cfg = cfg
         self.hotkey = parse_hotkey(cfg.hotkey)
         self.client = OllamaClient(cfg.ollama_url, cfg.model, cfg.timeout_s, cfg.keep_alive)
@@ -207,17 +213,28 @@ class GrammarFixApp(rumps.App):
                 raise TextAccessError(f"Text is longer than {self.cfg.max_chars} chars: skipped")
 
             model_started = time.perf_counter()
-            result = correct_text(target.text, self.client.correct, self.cfg.max_workers)
+            result = correct_text(
+                target.text, self.client.correct, self.cfg.max_workers,
+                detect=lang.detect, languages=self.cfg.languages,
+            )
             model_s = time.perf_counter() - model_started
             for chunk in result.chunks:
                 if chunk.status.startswith("rejected"):
-                    log.warning("  chunk %s (left unchanged)", chunk.status)
+                    log.warning("  chunk [%s] %s (left unchanged)", chunk.lang, chunk.status)
                 # Text goes to the log only in debug mode (GRAMMAR_FIX_DEBUG=1).
-                log.debug("  %s: %r -> %r", chunk.status, chunk.original, chunk.result)
-            counts = (f"{len(result.chunks)} chunk(s): {result.changed_count} fixed, "
-                      f"{result.rejected_count} rejected")
+                log.debug("  [%s] %s: %r -> %r", chunk.lang, chunk.status, chunk.original, chunk.result)
+            counts = (f"{'/'.join(result.languages) or '-'} | {len(result.chunks)} chunk(s): "
+                      f"{result.changed_count} fixed, {result.rejected_count} rejected")
+            if result.skipped_count:
+                skipped = sorted({c.status.split(":", 1)[1] for c in result.chunks if c.status.startswith("skipped")})
+                counts += f", {result.skipped_count} skipped ({'/'.join(skipped)})"
 
             if result.text == target.text:
+                if result.chunks and not result.languages:  # nothing was in an enabled language
+                    log.info("%s | %s | not corrected", where, counts)
+                    self._set_status(ICON_WARN, f"Language not enabled ({'/'.join(self.cfg.languages)} only)",
+                                     reset=True)
+                    return
                 log.info("%s | %s | no issues | model %.2f s", where, counts, model_s)
                 self._set_status(ICON_OK, "No issues found", reset=True)
                 return
@@ -245,8 +262,8 @@ def main() -> None:
         datefmt="%H:%M:%S",
     )
     cfg = load_config()
-    log.info("Grammar Fix starting: model %s, Ollama %s%s", cfg.model, cfg.ollama_url,
-             " (DEBUG: text is logged)" if debug else "")
+    log.info("Grammar Fix starting: model %s, languages %s, Ollama %s%s", cfg.model,
+             "/".join(cfg.languages), cfg.ollama_url, " (DEBUG: text is logged)" if debug else "")
     # Accessory: no Dock icon and never steals focus from the app being edited.
     NSApplication.sharedApplication().setActivationPolicy_(NSApplicationActivationPolicyAccessory)
     GrammarFixApp(cfg).run()

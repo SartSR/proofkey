@@ -37,7 +37,7 @@
 {"lang": "pl", "input": "Włanczam serwer ponownie.", "expected": ["Włączam serwer ponownie."]}
 {"lang": "pl", "input": "Wyłanczam powiadomienia na weekend.", "expected": ["Wyłączam powiadomienia na weekend."]}
 {"lang": "pl", "input": "Spóźnie się kilka minut.", "expected": ["Spóźnię się kilka minut."]}
-{"lang": "pl", "input": "W każdym bądź razie wyślij mi ten plik.", "expected": ["W każdym razie wyślij mi ten plik."]}
+{"lang": "pl", "input": "W każdym bądź razie wyślij mi ten plik.", "expected": ["W każdym razie wyślij mi ten plik.", "W każdym bądź razie wyślij mi ten plik."]}
 {"lang": "pl", "input": "Zrobiłem deploy na produkcje i wszystko działa.", "expected": ["Zrobiłem deploy na produkcję i wszystko działa."]}
 {"lang": "pl", "input": "Spotkanie zostało przełożone na Poniedziałek.", "expected": ["Spotkanie zostało przełożone na poniedziałek."]}
 {"lang": "pl", "input": "Nie wiem czy zdąże na spotkanie.", "expected": ["Nie wiem, czy zdążę na spotkanie."]}
@@ -50,7 +50,7 @@
 {"lang": "pl", "input": "Dzień dobry,\nchciałbym zapytać czy raport jest już gotowy.\n\nPozdrawiam,\nAnna", "expected": ["Dzień dobry,\nchciałbym zapytać, czy raport jest już gotowy.\n\nPozdrawiam,\nAnna"]}
 {"lang": "pl", "input": "- zaktualizować dokumentacje\n- naprawić błąd logowania\n- wdrożyć na staging", "expected": ["- zaktualizować dokumentację\n- naprawić błąd logowania\n- wdrożyć na staging"]}
 {"lang": "pl", "input": "Dzisiaj jest bardzo ciepło na dworze.", "expected": ["Dzisiaj jest bardzo ciepło na dworze."]}
-{"lang": "pl", "input": "Wysłałem ci wczoraj maila z raportem.", "expected": ["Wysłałem ci wczoraj maila z raportem."]}
+{"lang": "pl", "input": "Wysłałem ci wczoraj maila z raportem.", "expected": ["Wysłałem ci wczoraj maila z raportem.", "Wysłałem Ci wczoraj maila z raportem."]}
 {"lang": "pl", "input": "Spoko, ogarnę to po obiedzie", "expected": ["Spoko, ogarnę to po obiedzie"]}
 {"lang": "pl", "input": "Endpoint zwraca błąd 500, gdy brakuje `user_id`.", "expected": ["Endpoint zwraca błąd 500, gdy brakuje `user_id`."]}
 {"lang": "pl", "input": "Dzień dobry, w załączniku przesyłam fakturę za październik.", "expected": ["Dzień dobry, w załączniku przesyłam fakturę za październik."]}

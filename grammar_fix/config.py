@@ -19,6 +19,7 @@ class Config:
     hotkey: str = "ctrl+alt+g"
     max_chars: int = 8000
     max_workers: int = 4
+    languages: tuple[str, ...] = ("en", "pl")  # languages to correct; others are left untouched
 
 
 def load_config(path: str | Path | None = None) -> Config:
@@ -36,6 +37,10 @@ def load_config(path: str | Path | None = None) -> Config:
     corr = data.get("correction", {})
     cfg.max_chars = int(corr.get("max_chars", cfg.max_chars))
     cfg.max_workers = int(corr.get("max_workers", cfg.max_workers))
+    languages = corr.get("languages", list(cfg.languages))
+    if not isinstance(languages, list) or not languages or not all(isinstance(x, str) for x in languages):
+        raise ValueError(f"[correction] languages must be a non-empty list of codes, got {languages!r}")
+    cfg.languages = tuple(x.strip().lower() for x in languages)
     return cfg
 
 

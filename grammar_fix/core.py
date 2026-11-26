@@ -6,6 +6,9 @@ Design notes (why it looks like this):
   reach the model and are re-attached verbatim.
 - Very long lines are cut at sentence boundaries into chunks of at most
   MAX_CHUNK_CHARS, so small models do not start rewriting whole paragraphs.
+- Each chunk gets a language. The detector is injected (see lang.py), so this
+  module stays free of any OS dependency and is testable with fakes. Chunks in
+  languages that are not enabled (e.g. Ukrainian) are left untouched.
 - Every model answer is validated. Anything that looks like a rewrite (length
   jump, low similarity, lost URL/@mention/`code`) is dropped and the original
   chunk is kept. A missed fix is cheap; a silently mangled message is not.
@@ -22,9 +25,12 @@ import difflib
 import re
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from typing import Callable, List, NamedTuple, Optional, Tuple, Union
+from typing import Callable, List, NamedTuple, Optional, Sequence, Tuple, Union
 
-Corrector = Callable[[str], str]
+# corrector(chunk, lang) -> corrected chunk
+Corrector = Callable[[str, str], str]
+# detect(text) -> (language code or None, probability)
+Detector = Callable[[str], Tuple[Optional[str], float]]
 
 
 class ChunkRejected(Exception):
@@ -39,13 +45,20 @@ class ChunkRejected(Exception):
 class Segment(NamedTuple):
     text: str
     needs_correction: bool
-    after_marker: bool = False  # chunk follows a list/quote marker ("- ", "1. ", "> ")
+    # Keep the first letter's case as typed: the chunk follows a list/quote marker
+    # ("- ", "1. ", "> ") or continues a line that ended with a comma
+    # ("Dzień dobry,\nchciałbym…"). The model sees the chunk alone and would
+    # otherwise capitalise it as a sentence start.
+    keep_initial_case: bool = False
+
 
 MAX_CHUNK_CHARS = 600
 MIN_SIMILARITY = 0.6  # char-level similarity below this = the model rewrote the text
 MAX_LENGTH_DELTA_RATIO = 0.5  # reject if length changed by more than 50 %...
 SHORT_TEXT_SLACK = 12  # ...or by more than this many chars for short texts
-MIN_LATIN_SHARE = 0.6  # skip lines that are mostly non-Latin (e.g. Ukrainian)
+MIN_LATIN_SHARE = 0.6  # without a detector: skip lines that are mostly non-Latin
+MIN_CHARS_FOR_OWN_LANGUAGE = 20  # shorter chunks inherit the language of the whole field
+MIN_LANGUAGE_CONFIDENCE = 0.6  # below this a chunk's own detection is not trusted
 
 # Leading indentation plus an optional list / quote marker: "  - ", "1. ", "> ".
 _LINE_PREFIX_RE = re.compile(r"^(\s*(?:(?:[-*•‣◦>]|\d{1,3}[.)])\s+)?)")
@@ -63,29 +76,35 @@ _PROTECTED_RE = re.compile(
     re.VERBOSE,
 )
 
-# Whitespace after sentence-final punctuation, followed by a sentence start.
-_SENTENCE_GAP_RE = re.compile(r"""(?:(?<=[.!?])|(?<=[.!?]["')\]]))\s+(?=["'(\[]?[A-Z0-9])""")
+# Whitespace after sentence-final punctuation, followed by a sentence start
+# (Latin incl. Polish capitals, or a digit).
+_SENTENCE_GAP_RE = re.compile(
+    r"""(?:(?<=[.!?])|(?<=[.!?]["')\]]))\s+(?=["'(\[„]?[A-ZĄĆĘŁŃÓŚŹŻ0-9])"""
+)
 
 _THINK_RE = re.compile(r"<think>.*?(?:</think>|$)", re.DOTALL | re.IGNORECASE)
 _SPECIAL_TOKEN_RE = re.compile(r"<\|[^|>]*\|>")
 _FENCE_RE = re.compile(r"^```[\w-]*\n(.*?)\n?```$", re.DOTALL)
 _PREFIX_RE = re.compile(
     r"^(?:here(?:\s+is|'s)\s+the\s+corrected\s+(?:text|version|sentence)"
-    r"|corrected(?:\s+(?:text|version|sentence))?|correction|fixed(?:\s+text)?|output)\s*:\s*",
+    r"|corrected(?:\s+(?:text|version|sentence))?|correction|fixed(?:\s+text)?|output"
+    # Polish: "Poprawiony tekst:", "Oto poprawiona wersja:", "Poprawka:"
+    r"|(?:oto\s+)?poprawion[ya](?:\s+(?:tekst|wersja|zdanie))?|poprawka)\s*:\s*",
     re.IGNORECASE,
 )
 
 # Every character is whitespace, a word char or "other", so findall() covers the string.
 _TOKEN_RE = re.compile(r"\s+|\w+(?:['’]\w+)*|[^\w\s]")
 _QUOTE_TABLE = str.maketrans({"“": '"', "”": '"', "„": '"', "‘": "'", "’": "'"})
-_QUOTE_PAIRS = (('"', '"'), ("'", "'"), ("“", "”"), ("‘", "’"))
+_QUOTE_PAIRS = (('"', '"'), ("'", "'"), ("“", "”"), ("‘", "’"), ("„", "”"))
 
 
 @dataclass
 class ChunkReport:
     original: str
     result: str
-    status: str  # "unchanged" | "changed" | "rejected:<reason>"
+    status: str  # "unchanged" | "changed" | "rejected:<reason>" | "skipped:<lang>"
+    lang: Optional[str] = None
 
 
 @dataclass
@@ -101,18 +120,34 @@ class CorrectionResult:
     def rejected_count(self) -> int:
         return sum(1 for c in self.chunks if c.status.startswith("rejected"))
 
+    @property
+    def skipped_count(self) -> int:
+        return sum(1 for c in self.chunks if c.status.startswith("skipped"))
+
+    @property
+    def languages(self) -> List[str]:
+        """Languages of the chunks sent to the model, in order of first use."""
+        seen: List[str] = []
+        for c in self.chunks:
+            if c.lang and not c.status.startswith("skipped") and c.lang not in seen:
+                seen.append(c.lang)
+        return seen
+
 
 # --------------------------------------------------------------------------- split
 
 
-def _should_correct(core: str) -> bool:
+def _has_text(core: str) -> bool:
+    """Worth sending to a model at all: some letters outside URLs/mentions/code."""
     if len(core.strip()) < 2:
         return False
+    return any(c.isalpha() for c in _PROTECTED_RE.sub(" ", core))
+
+
+def _mostly_latin(core: str) -> bool:
     letters = [c for c in _PROTECTED_RE.sub(" ", core) if c.isalpha()]
-    if not letters:
-        return False
-    latin = sum(1 for c in letters if c.isascii())
-    return latin >= len(letters) * MIN_LATIN_SHARE
+    latin = sum(1 for c in letters if c.isascii() or "À" <= c <= "ɏ")  # incl. Latin Extended
+    return bool(letters) and latin >= len(letters) * MIN_LATIN_SHARE
 
 
 def _split_long(core: str) -> List[Tuple[str, str]]:
@@ -141,6 +176,7 @@ def _split_long(core: str) -> List[Tuple[str, str]]:
 def segment(text: str) -> List[Segment]:
     """Cut text into segments; "".join(s.text for s in segments) == text."""
     segs: List[Segment] = []
+    prev_line = ""  # last non-blank line, to detect "Dzień dobry," continuations
     for line in text.splitlines(keepends=True):
         body = line.rstrip("\r\n")
         ending = line[len(body) :]
@@ -148,17 +184,46 @@ def segment(text: str) -> List[Segment]:
         rest = body[len(prefix) :]
         core = rest.rstrip()
         trailing = rest[len(core) :]
-        has_marker = bool(prefix.strip())
+        keep_case = bool(prefix.strip()) or prev_line.endswith(",")
 
         segs.append(Segment(prefix, False))
-        if _should_correct(core):
+        if _has_text(core):
             for n, (piece, sep) in enumerate(_split_long(core)):
-                segs.append(Segment(piece, True, has_marker and n == 0))
+                segs.append(Segment(piece, True, keep_case and n == 0))
                 segs.append(Segment(sep, False))
         else:
             segs.append(Segment(core, False))
         segs.append(Segment(trailing + ending, False))
+        if body.strip():
+            prev_line = body.rstrip()
     return [s for s in segs if s.text]
+
+
+# ---------------------------------------------------------------------- languages
+
+
+def assign_languages(
+    text: str, chunks: Sequence[str], detect: Optional[Detector], languages: Sequence[str]
+) -> List[Optional[str]]:
+    """Language for every chunk; None = do not correct.
+
+    Without a detector every Latin-script chunk gets languages[0]. With one, the
+    whole field is detected first (long text = reliable), and a chunk overrides
+    it only when it is long enough and its own detection is confident. Short
+    replies like "ok" or "dzięki" therefore follow the rest of the message.
+    """
+    if detect is None:
+        return [languages[0] if _mostly_latin(c) else None for c in chunks]
+    field_lang, _ = detect(text)
+    out: List[Optional[str]] = []
+    for chunk in chunks:
+        lang = field_lang
+        if len(chunk) >= MIN_CHARS_FOR_OWN_LANGUAGE:
+            own, probability = detect(chunk)
+            if own and probability >= MIN_LANGUAGE_CONFIDENCE:
+                lang = own
+        out.append(lang)
+    return out
 
 
 # ------------------------------------------------------------------ post-process
@@ -236,45 +301,59 @@ def postprocess(original: str, raw: str) -> Tuple[str, str]:
     return merged, ("changed" if merged != original else "unchanged")
 
 
-# ---------------------------------------------------------------------- pipeline
-
-
 def _keep_initial_case(original: str, fixed: str) -> str:
-    """List items are often lower-case fragments; the model sees each item alone
-    and capitalizes some of them, which makes the list inconsistent."""
     if original[:1].islower() and fixed[:1].isupper() and fixed[0].lower() == original[0]:
         return original[0] + fixed[1:]
     return fixed
 
 
-def correct_text(text: str, corrector: Corrector, max_workers: int = 4) -> CorrectionResult:
+# ---------------------------------------------------------------------- pipeline
+
+
+def correct_text(
+    text: str,
+    corrector: Corrector,
+    max_workers: int = 4,
+    detect: Optional[Detector] = None,
+    languages: Sequence[str] = ("en",),
+) -> CorrectionResult:
     """Correct `text`. Corrector errors (e.g. Ollama down) propagate to the caller;
     ChunkRejected only leaves that one chunk unchanged."""
     segs = segment(text)
-    idx = [i for i, s in enumerate(segs) if s.needs_correction]
     parts = [s.text for s in segs]
-    reports: List[ChunkReport] = []
+    candidates = [i for i, s in enumerate(segs) if s.needs_correction]
+    langs = assign_languages(text, [parts[i] for i in candidates], detect, languages)
 
-    def safe(chunk: str) -> Union[str, ChunkRejected]:
+    reports: dict = {}
+    jobs: List[Tuple[int, str]] = []
+    for i, lang in zip(candidates, langs):
+        if lang in languages:
+            jobs.append((i, lang))
+        else:
+            reports[i] = ChunkReport(parts[i], parts[i], f"skipped:{lang or 'unknown'}", lang)
+
+    def safe(job: Tuple[int, str]) -> Union[str, ChunkRejected]:
+        i, lang = job
         try:
-            return corrector(chunk)
+            return corrector(parts[i], lang)
         except ChunkRejected as e:
             return e
 
-    if idx:
-        workers = max(1, min(max_workers, len(idx)))
+    if jobs:
+        workers = max(1, min(max_workers, len(jobs)))
         with ThreadPoolExecutor(max_workers=workers) as pool:
-            raws = list(pool.map(safe, [parts[i] for i in idx]))
-        for i, raw in zip(idx, raws):
+            raws = list(pool.map(safe, jobs))
+        for (i, lang), raw in zip(jobs, raws):
             original = parts[i]
             if isinstance(raw, ChunkRejected):
                 fixed, status = original, "rejected:" + raw.reason
             else:
                 fixed, status = postprocess(original, raw)
-                if segs[i].after_marker:
+                if segs[i].keep_initial_case:
                     fixed = _keep_initial_case(original, fixed)
                     if fixed == original:
                         status = "unchanged"
             parts[i] = fixed
-            reports.append(ChunkReport(original, fixed, status))
-    return CorrectionResult("".join(parts), reports)
+            reports[i] = ChunkReport(original, fixed, status, lang)
+
+    return CorrectionResult("".join(parts), [reports[i] for i in sorted(reports)])
